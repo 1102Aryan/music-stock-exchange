@@ -151,12 +151,14 @@ class GenreTrader(Trader):
 
     def pick(self, snapshot, timestep, genre_popularity):
         """
-        
+        stores the genre popularity 
+        looks at the history to see if it is getting more popular or less
+        if trend is above .05 then buy else if it is less than -.05 then sell
         """
-        for genre, heat in genre_popularity.items():
+        for genre, popularity in genre_popularity.items():
             if genre not in self.popularity_history:
                 self.popularity_history[genre] = []
-            self.popularity_history[genre].append(heat)
+            self.popularity_history[genre].append(popularity)
         orders = []
         for aid, info in snapshot.items():
             genre = info["genre"]
@@ -176,9 +178,14 @@ class GenreTrader(Trader):
 
 
 class LoyaltyTrader(Trader):
+    """
+    Buys artists with a more loyal fanbase. Safer investment.
+    """
+    
     def pick(self, snapshot, timestep, genre_popularity):
         """
-        
+        buys stocks which have high loyalty, not declining, and not already owned
+        if loyalty is low (0.4<) sell
         """
         orders = []
         for aid, info in snapshot.items():
@@ -198,8 +205,16 @@ class LoyaltyTrader(Trader):
 
 
 class TrendTrader(Trader):
+    """
+    Buys artist that have high virality and sells artist that are in a scandal
+    """
+    
     def pick(self, snapshot, timestep, genre_popularity):
-        """ """
+        """
+        if virality is above .15 buys
+        else if virality is less than .05 then sell
+        if scandal > .2 sell
+        """
         orders = []
         for aid, info in snapshot.items():
             price = info["price"]
@@ -213,8 +228,17 @@ class TrendTrader(Trader):
 
 
 class CareerTrader(Trader):
+    """
+    Buys artist that are emerging talent
+    sells artist when they have reached peak  
+    """
+    
     def pick(self, snapshot, timestep, genre_popularity):
-        """ """
+        """
+        if artist is emerging and talent > 0.5 then buy
+        else if artist is rising and talent > 0.6 and not already bought then buy
+        once reached peak [peak, established, declining] sell
+        """
         orders = []
         for aid, info in snapshot.items():
             stage = info["stage"]
@@ -237,6 +261,62 @@ class AdaptiveTrader(Trader):
     """
     Switches between financial and music-domain trading to maximise profit
     """
+    def __init__(self, trader_id, initial_fund=10000):
+        super().__init__(trader_id, initial_fund)
+        self.momentum_score = 0
+        self.meanrev_score = 0
+        self.using_momentum = True
+        self.prev_wealth = initial_fund
     
     def pick(self, snapshot, timestep, genre_popularity):
-        pass
+        """
+        Every 50 steps it checks which option performs better
+        if the current wealth is better than previous then if its on momentum its score increases else the other score increase
+        if its worse the scores are decreased for the model
+        selects the agent and carries out the logic
+        """
+        
+        if timestep > 0 and timestep % 50 == 0:
+            current_wealth = self.wealth(snapshot)
+            if current_wealth > self.prev_wealth:
+                if self.using_momentum:
+                    self.momentum_score += 1
+                else:
+                    self.meanrev_score += 1
+            else:
+                if self.using_momentum:
+                    self.meanrev_score += 1
+                    
+                else:
+                    self.momentum_score += 1
+            if self.momentum_score >= self.meanrev_score:
+                self.using_momentum = True
+            else:
+                self.using_momentum = False
+            self.prev_wealth = current_wealth
+        orders = []
+        for aid, info in snapshot.items():
+            history = info["history"]
+            if len(history) < 20:
+                continue
+            price = info["price"]
+            
+            if self.using_momentum:
+                if len(history) >= 10:
+                    old = history[-10]
+                    change = (price - old) / old if old > 0 else 0
+                    if change > 0.05 and self.can_buy(price):
+                        orders.append((aid, "buy"))
+                    elif change < -0.05 and self.holds(aid) > 0:
+                        orders.append((aid, "sell"))
+            else:
+                avg = sum(history[-20:]) / 20
+                dev = (price - avg) / avg if avg > 0 else 0
+                if dev < -0.1 and self.can_buy(price):
+                    orders.append((aid, "buy"))
+                elif dev > 0.1 and self.holds(aid) > 0:
+                    orders.append((aid, "sell"))
+        return orders
+                
+        
+                    

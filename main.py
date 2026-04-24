@@ -4,7 +4,7 @@ from artist import Artist, GENRES, STAGES
 from market import Market
 from trader import (
     RandomTrader, MomentumTrader, MeanRevTrader, ValueTrader,
-    GenreTrader, CareerTrader, LoyaltyTrader, TrendTrader,
+    GenreTrader, CareerTrader, LoyaltyTrader, TrendTrader, AdaptiveTrader
 )
 
 
@@ -78,6 +78,7 @@ def main():
         CareerTrader("career"),
         LoyaltyTrader("loyalty"),
         TrendTrader("trend"),
+        AdaptiveTrader("adaptive")
     ]
 
     run_simulation(agents)

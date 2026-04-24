@@ -1,7 +1,7 @@
 <h1 align="center">music-stock-exchange</h1>
 
 ## Project Description
- Music Stock Exchange is a culature stock exchange where music artist are traded as stocks. Trading agents compete to see how a financial agent performs compared to a music-domain agent in maximising profit.
+ Music Stock Exchange is a culture stock exchange where music artist are traded as stocks. Trading agents compete to see how a financial agent performs compared to a music-domain agent in maximising profit.
 
 The project is inspired by the Bristol Stock Exchange (Cliff, 2018).
 
