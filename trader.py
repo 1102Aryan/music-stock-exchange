@@ -318,5 +318,158 @@ class AdaptiveTrader(Trader):
                     orders.append((aid, "sell"))
         return orders
                 
+class HybridTrader(Trader):
+    """
+    Applies both finance and music knowledge
+    buys when price momentum is up and genre is increasing in popularity
+    sells when either option is not true
+    """
+    def __init__(self, trader_id, initial_fund=10000):
+        super().__init__(trader_id, initial_fund)
+        self.popularity_history = {}
+        
+        
+    def pick(self, snapshot, timestep, genre_popularity):
+        """
+        if price rise and genre rise is true then buy if it is less than an amount then sell 
+        """
+        
+        for genre, popularity in genre_popularity.items():
+            if genre not in self.popularity_history:
+                self.popularity_history[genre] = []
+            self.popularity_history[genre].append(popularity)
+            
+        orders = []
+        for aid, info in snapshot.items():
+            history = info["history"]
+            genre = info["genre"]
+            price = info["price"]
+            
+            if len(history) < 10:
+                continue
+            if genre not in self.popularity_history or len(self.popularity_history[genre]) < 5:
+                continue
+            
+            prev_price = history[-10]
+            
+            if prev_price:
+                price_outcome = (price - prev_price) /  prev_price
+            if prev_price > 0 and (price_outcome) > 0.03:
+                price_rise = True
+            else:
+                price_rise = False
+                
+            genre_trend = self.popularity_history[genre][-1] - self.popularity_history[genre][-5]
+            if genre_trend > 0.03:
+                genre_rise = True
+            else:
+                genre_rise = False
+                
+            if price_rise and genre_rise and self.can_buy(price):
+                orders.append((aid, "buy"))
+                
+            if price_outcome < -0.03 and not genre_rise and self.holds(aid) > 0:
+                orders.append((aid, "sell"))
+        return orders
+            
+class QLearningTrader(Trader):
+    """
+    Qlearning learns which actions works best in different cases
+    current has 4 states , 500 steps to learn
+    
+    
+    starts exploring randomly and starts learning
+    
+    """
+    
+    def __init__(self, trader_id, initial_fund=10000):
+        super().__init__(trader_id, initial_fund)
+        self.q_table = {}
+        self.temporal_difference = 0
+        self.learning_rate = 0.1
+        self.explore_rate = 0.3
+        self.discount = 0.9
+        self.prev_wealth = initial_fund
+        self.prev_actions = {}
+        
+    
+    def get_state(self, info):
+        """
+        Turns the trading mechnics into a simple state: (price_up, growing)
+        
+        """
+        
+        history = info["history"]
+        
+        if len(history) >= 10 and history[-10] > 0:
+            change = (info["price"] - history[-10]) / history[-10]
+            if change > 0.02:
+                price_up = True
+            else:
+                price_up = False
+        else:
+            price_up = False
+        if info["stage"] in ["emerging", "rising"]:
+            growing = True
+        else:
+            growing = False
+        return (price_up, growing)
+            
+        
+    def get_q(self, state):
+        """
+        Gets q value for the state
+        if not in q table makes one 
+        """
+        
+        if state not in self.q_table:
+            self.q_table[state] = {"buy": 0.0, "sell": 0.0, "hold": 0.0}
+        return self.q_table[state]    
+        
+    def pick(self, snapshot, timestep, genre_popularity):
+        """
+        reward is calculated from wealth change since prev weaalth
+        and learns from prev steps actions
+        
+        """
+        
+        current_wealth = self.wealth(snapshot)
+        reward = current_wealth - self.prev_wealth
+        self.prev_wealth = current_wealth
+        
+        for aid, (prev_state, prev_action) in self.prev_actions.items():
+            if aid in snapshot:
+                new_state = self.get_state(snapshot[aid])
+                prev_q = self.get_q(prev_state)
+                new_q = self.get_q(new_state)
+                best_option = max(new_q.values())
+                
+                # Q learning formula
+                prev_q[prev_action] += self.learning_rate * (reward + self.discount * best_option - prev_q[prev_action])
+        orders = []
+        self.prev_actions = {}
+        
+        for aid, info in snapshot.items():
+            state = self.get_state(info)
+            q = self.get_q(state)
+            # either explores new step or pick best known action
+            if random.random() < self.explore_rate:
+                action = random.choice(["buy", "sell", "hold"])
+            else:
+                action = max(q, key=q.get)
+            
+            if action == "buy" and self.can_buy(info["price"]):
+                orders.append((aid, "buy"))
+            elif action == "sell" and self.holds(aid) > 0:
+                orders.append((aid, "sell"))
+            else:
+                action = "hold"
+            self.prev_actions[aid] = (state, action)
+        return orders
+                
+              
+        
+
+        
         
                     

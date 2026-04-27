@@ -24,7 +24,7 @@ class Market:
         # the period are multiplied by 33 and then added by the timestamp - offsetting the waves
         # The changes the trends of all teh genres peak so they are not the same 
         cycle = math.sin((timestamp + period * 33) / 200 * 2 * math.pi)
-        return cycle * 0.6
+        return cycle * 0.3
 
     def random_events(self, timestep):
         """

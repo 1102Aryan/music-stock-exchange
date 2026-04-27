@@ -4,7 +4,8 @@ from artist import Artist, GENRES, STAGES
 from market import Market
 from trader import (
     RandomTrader, MomentumTrader, MeanRevTrader, ValueTrader,
-    GenreTrader, CareerTrader, LoyaltyTrader, TrendTrader, AdaptiveTrader
+    GenreTrader, CareerTrader, LoyaltyTrader, TrendTrader,
+    AdaptiveTrader, HybridTrader, QLearningTrader
 )
 
 
@@ -66,6 +67,7 @@ def run_simulation(agents, num_artists=100, num_steps=500, config=None, seed=42)
         profit = final_wealth - agent.initial_fund
         sign = "+" if profit >= 0 else ""
         print(f"{agent.trader_id:<15} ${final_wealth:>13,.2f} {sign}{profit:>+9,.2f}")
+    return {"snapshot": snapshot}
 
 
 def main():
@@ -78,7 +80,9 @@ def main():
         CareerTrader("career"),
         LoyaltyTrader("loyalty"),
         TrendTrader("trend"),
-        AdaptiveTrader("adaptive")
+        AdaptiveTrader("adaptive"),
+        HybridTrader("hybrid"),
+        QLearningTrader("q_learning")
     ]
 
     run_simulation(agents)
