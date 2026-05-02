@@ -13,6 +13,7 @@ import artist
 import market
 import trader
 from trader import RandomTrader, CareerTrader, TrendTrader, GenreTrader, MeanRevTrader, LoyaltyTrader, ValueTrader, MomentumTrader, AdaptiveTrader, HybridTrader, QLearningTrader
+from trader import QLearningBaseTrader, QLearningHighTrader, QLearningPreBaseTrader, QLearningPreHighTrader
 import main
 
 COLOURS = {
@@ -123,6 +124,65 @@ def experiment_population(trials=30, output_dir="results"):
     df.to_csv(f"{output_dir}/experiment_population.csv", index=False)
     return df
 
+def experiment_q_learning(trials=30, output_dir="results"):
+    """
+    Test to see if more steps or more states would help improve the performance
+    """
+    
+    table = []
+    configs = {
+        "base_500":     {"base": True,  "pretrain": False, "steps": 500},
+        "base_1000":    {"base": True,  "pretrain": False, "steps": 1000},
+        "base_2000":    {"base": True,  "pretrain": False, "steps": 2000},
+        "high_500":     {"base": False, "pretrain": False, "steps": 500},
+        "high_1000":    {"base": False, "pretrain": False, "steps": 1000},
+        "high_2000":    {"base": False, "pretrain": False, "steps": 2000},
+        "pre_base_500":  {"base": True,  "pretrain": True,  "steps": 500},
+        "pre_base_1000": {"base": True,  "pretrain": True,  "steps": 1000},
+        "pre_base_2000": {"base": True,  "pretrain": True,  "steps": 2000},
+        "pre_high_500":  {"base": False, "pretrain": True,  "steps": 500},
+        "pre_high_1000": {"base": False, "pretrain": True,  "steps": 1000},
+        "pre_high_2000": {"base": False, "pretrain": True,  "steps": 2000},
+    }
+
+    for name, cfg in configs.items():
+        print(f"Running {name}")
+        for trial in range(trials):
+            if cfg["base"] and cfg["pretrain"]:
+                ql = QLearningPreBaseTrader(f"ql_{name}")
+                ql.pretrain()
+                states_label = "pre_base"
+            elif not cfg["base"] and cfg["pretrain"]:
+                ql = QLearningPreHighTrader(f"ql_{name}")
+                ql.pretrain()
+                states_label = "pre_high"
+            elif cfg["base"]:
+                ql = QLearningBaseTrader(f"ql_{name}")
+                states_label = "base"
+            else:
+                ql = QLearningHighTrader(f"ql_{name}")
+                states_label = "high"
+
+            agents = [ql, MomentumTrader(f"momentum_{name}"), RandomTrader(f"random_{name}")]
+
+            results = main.run_simulation(agents, num_artists=100, num_steps=cfg["steps"], seed=trial * 100 + len(name))
+            for agent in agents:
+                snapshot = results["snapshot"]
+                wealth = agent.wealth(snapshot)
+                table.append({
+                    "trial": trial,
+                    "config": name,
+                    "states": states_label,
+                    "steps": cfg["steps"],
+                    "agent": agent.trader_id.split("_")[0],
+                    "wealth": wealth,
+                    "return_pct": (wealth - 10000) / 100,
+                })
+            
+    
+    df = pd.DataFrame(table)
+    df.to_csv(f"{output_dir}/experiment_q_learning.csv", index=False)
+
 
 def experiment_chart_strategy(output_dir="results"):
     df = pd.read_csv(f"{output_dir}/experiment_strategy.csv")
@@ -193,6 +253,52 @@ def experiment_chart_population(output_dir="results"):
         best = df[df["composition"] == comp].groupby("agent_type")["return_pct"].mean().idxmax()
         val = df[df["composition"] == comp].groupby("agent_type")["return_pct"].mean().max()
         print(f"  {comp}: {best} ({val:+.1f}%)")
+        
+def experiment_chart_q_learning(output_dir="results"):
+    df = pd.read_csv(f"{output_dir}/experiment_q_learning.csv")
+    ql = df[df["agent"] == "ql"]
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    styles = {
+        "base":     ("--", "#e742ce", "Base"),
+        "high":     ("-",  "#349ede", "High"),
+        "pre_base": ("--", "#8b00ff", "Pre-trained Base"),
+        "pre_high": ("-",  "#0047ab", "Pre-trained High"),
+    }
+    for states_type, (style, colour, label) in styles.items():
+        subset = ql[ql["states"] == states_type]
+        if subset.empty:
+            continue
+        means = subset.groupby("steps")["return_pct"].mean()
+        ax.plot(means.index, means.values, marker="o", linestyle=style, color=colour, linewidth=2, label=f"Q-Learning ({label})") 
+    
+    momentum_df = df[df["agent"] == "momentum"]
+    momentum_mean = momentum_df.groupby("steps")["return_pct"].mean()
+    ax.plot(momentum_mean.index, momentum_mean.values, marker="s", linestyle=":",
+            color="#e74c3c", linewidth=1.5, label="Momentum (benchmark)")
+
+    rand_df = df[df["agent"] == "random"]
+    rand_mean = rand_df.groupby("steps")["return_pct"].mean()
+    ax.plot(rand_mean.index, rand_mean.values, marker="^", linestyle=":",
+            color="#999999", linewidth=1.5, label="Random (baseline)")
+
+    ax.set_xlabel("Number of timesteps")
+    ax.set_ylabel("Mean Return (%)")
+    ax.set_title("Experiment 4: Q-Learning Performance vs Training Length")
+    ax.legend()
+    ax.axhline(y=0, color="black", linestyle="--", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(f"{output_dir}/chart_qlearning.png", dpi=150)
+    plt.close()  
+    
+    print("Experiment_Qlearning")
+    print(f"{'Config':<20} {'Mean Return':>12}")
+    print("-" * 35)
+    for config in sorted(ql["config"].unique()):
+        mean = ql[ql["config"] == config]["return_pct"].mean()
+        print(f"{config:<20} {mean:>+11.1f}%")  
+    
+    
 
 
 if __name__ == "__main__":
@@ -204,10 +310,12 @@ if __name__ == "__main__":
     experiment_strategy(trials=30, output_dir=output_dir)
     experiment_volatility(trials=30, output_dir=output_dir)
     experiment_population(trials=30, output_dir=output_dir)
+    experiment_q_learning(trials=30, output_dir=output_dir)
 
     experiment_chart_strategy(output_dir)
     experiment_chart_volatility(output_dir)
     experiment_chart_population(output_dir)
+    experiment_chart_q_learning(output_dir)
 
     total = time.time() - start
     print(f"Completed running in {total:.0f}s, saved in {output_dir}/")

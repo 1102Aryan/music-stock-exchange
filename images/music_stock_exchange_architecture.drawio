@@ -1,0 +1,78 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="62hb7nGmPms7lA77cges">
+    <mxGraphModel dx="1158" dy="835" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontFamily=Times New Roman;fontSize=20;fontStyle=0" value="Music Stock Exchange Architecture" vertex="1">
+          <mxGeometry height="60" width="292" x="233" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-12" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="iVFP7XHwg97gV3S0UcbS-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Times New Roman;fontSize=17;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Random Events&lt;div&gt;Virality, Scandal, Album, Nostalgia&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="340" x="209" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-13" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="iVFP7XHwg97gV3S0UcbS-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Times New Roman;fontSize=17;fillColor=#d5e8d4;strokeColor=#82b366;" value="Artist Value Update&lt;div&gt;Career, Fans, Value&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="340" x="209" y="204" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-14" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="iVFP7XHwg97gV3S0UcbS-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Times New Roman;fontSize=17;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Genre Popularity Cycles" vertex="1">
+          <mxGeometry height="60" width="340" x="209" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-15" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.148;exitY=0.997;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitPerimeter=0;" target="iVFP7XHwg97gV3S0UcbS-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-16" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="iVFP7XHwg97gV3S0UcbS-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-18" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.854;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" target="iVFP7XHwg97gV3S0UcbS-10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="569" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Times New Roman;fontSize=17;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Market Snapshot&lt;div&gt;Price, History, Genre, Stage, Talent, Loyalty, Virality&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="540" x="109" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Times New Roman;fontSize=17;fillColor=#fff2cc;strokeColor=#d6b656;" value="Financial Agents&lt;div&gt;Momentum, Value, etc&lt;/div&gt;" vertex="1">
+          <mxGeometry height="65" width="160" x="109" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Times New Roman;fontSize=17;fillColor=#fff2cc;strokeColor=#d6b656;" value="Music Agents&lt;div&gt;Genre, Career, etc&lt;/div&gt;" vertex="1">
+          <mxGeometry height="65" width="160" x="299" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Times New Roman;fontSize=17;fillColor=#fff2cc;strokeColor=#d6b656;" value="Learning Agents&lt;div&gt;Q-Learning, Hybrid&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="65" width="160" x="489" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-22" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="iVFP7XHwg97gV3S0UcbS-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="680" y="660" />
+              <mxPoint x="680" y="234" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-11" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Times New Roman;fontSize=17;fillColor=#f8cecc;strokeColor=#b85450;" value="Exchange&lt;div&gt;Process Orders, Update Prices&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="540" x="99" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-19" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="189" y="630" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-20" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.518;entryY=-0.009;entryDx=0;entryDy=0;entryPerimeter=0;" target="iVFP7XHwg97gV3S0UcbS-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iVFP7XHwg97gV3S0UcbS-21" edge="1" parent="1" source="iVFP7XHwg97gV3S0UcbS-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.869;entryY=-0.004;entryDx=0;entryDy=0;entryPerimeter=0;" target="iVFP7XHwg97gV3S0UcbS-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

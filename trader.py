@@ -1,4 +1,6 @@
 import random
+from artist import Artist, GENRES, STAGES
+from market import Market
 
 
 class Trader:
@@ -170,9 +172,9 @@ class GenreTrader(Trader):
             popularity_now = self.popularity_history[genre][-1]
             popularity_before = self.popularity_history[genre][-5]
             trend = popularity_now - popularity_before
-            if trend > 0.05 and self.can_buy(info["price"]):
+            if trend > 0.025 and self.can_buy(info["price"]):
                 orders.append((aid, "buy"))
-            elif trend < -0.05 and self.holds(aid) > 0:
+            elif trend < -0.025 and self.holds(aid) > 0:
                 orders.append((aid, "sell"))
         return orders
 
@@ -466,10 +468,533 @@ class QLearningTrader(Trader):
                 action = "hold"
             self.prev_actions[aid] = (state, action)
         return orders
+    
+    
+            
+class QLearningBaseTrader(Trader):
+    """
+    The base trader is the same as the QLearningTrader, designed specifcally for the qlearning_experiment
+    current has 4 states
+    
+    
+    starts exploring randomly and starts learning
+    
+    """
+    
+    def __init__(self, trader_id, initial_fund=10000):
+        super().__init__(trader_id, initial_fund)
+        self.q_table = {}
+        self.temporal_difference = 0
+        self.learning_rate = 0.1
+        self.explore_rate = 0.3
+        self.discount = 0.9
+        self.prev_wealth = initial_fund
+        self.prev_actions = {}
+        
+    
+    def get_state(self, info):
+        """
+        Turns the trading mechnics into a simple state: (price_up, growing)
+        
+        """
+        
+        history = info["history"]
+        
+        if len(history) >= 10 and history[-10] > 0:
+            change = (info["price"] - history[-10]) / history[-10]
+            if change > 0.02:
+                price_up = True
+            else:
+                price_up = False
+        else:
+            price_up = False
+        if info["stage"] in ["emerging", "rising"]:
+            growing = True
+        else:
+            growing = False
+        return (price_up, growing)
+            
+        
+    def get_q(self, state):
+        """
+        Gets q value for the state
+        if not in q table makes one 
+        """
+        
+        if state not in self.q_table:
+            self.q_table[state] = {"buy": 0.0, "sell": 0.0, "hold": 0.0}
+        return self.q_table[state]    
+        
+    def pick(self, snapshot, timestep, genre_popularity):
+        """
+        reward is calculated from wealth change since prev weaalth
+        and learns from prev steps actions
+        
+        """
+        
+        current_wealth = self.wealth(snapshot)
+        reward = current_wealth - self.prev_wealth
+        self.prev_wealth = current_wealth
+        
+        for aid, (prev_state, prev_action) in self.prev_actions.items():
+            if aid in snapshot:
+                new_state = self.get_state(snapshot[aid])
+                prev_q = self.get_q(prev_state)
+                new_q = self.get_q(new_state)
+                best_option = max(new_q.values())
+                
+                # Q learning formula
+                prev_q[prev_action] += self.learning_rate * (reward + self.discount * best_option - prev_q[prev_action])
+        orders = []
+        self.prev_actions = {}
+        
+        for aid, info in snapshot.items():
+            state = self.get_state(info)
+            q = self.get_q(state)
+            # either explores new step or pick best known action
+            if random.random() < self.explore_rate:
+                action = random.choice(["buy", "sell", "hold"])
+            else:
+                action = max(q, key=q.get)
+            
+            if action == "buy" and self.can_buy(info["price"]):
+                orders.append((aid, "buy"))
+            elif action == "sell" and self.holds(aid) > 0:
+                orders.append((aid, "sell"))
+            else:
+                action = "hold"
+            self.prev_actions[aid] = (state, action)
+        return orders
+    
+    
+                
+class QLearningHighTrader(Trader):
+    """
+    Qlearning high trader is a more sophisticated version of the base trader
+    
+    Has 18 states
+    
+    
+    starts exploring randomly and starts learning
+    
+    """
+    
+    def __init__(self, trader_id, initial_fund=10000):
+        super().__init__(trader_id, initial_fund)
+        self.q_table = {}
+        self.temporal_difference = 0
+        self.learning_rate = 0.1
+        self.explore_rate = 0.3
+        self.discount = 0.9
+        self.min_explore_rate = 0.07
+        self.prev_wealth = initial_fund
+        self.prev_actions = {}
+        
+    
+    def get_state(self, info):
+        """
+        Turns the trading mechnics into a simple state: (price_up, growing)
+        added 3 options
+        {price, career, virality} 
+        """
+        
+        history = info["history"]
+        
+        if len(history) >= 10 and history[-10] > 0:
+            change = (info["price"] - history[-10]) / history[-10]
+            if change > 0.02:
+                price = "rise"
+            elif change < -0.02:
+                price = "decrease"
+            else:
+                price = "flat"
+        else:
+            price = "flat"
+        if info["stage"] in ["emerging", "rising"]:
+            career = "rising"
+        elif info["stage"] == "peak":
+            career = "peak"
+        else:
+            career = "falling"
+            
+        if info["viral"] > 0.1:
+            viral = True
+        else:
+            viral = False
+        return (price, career, viral)
+            
+        
+    def get_q(self, state):
+        """
+        Gets q value for the state
+        if not in q table makes one 
+        """
+        
+        if state not in self.q_table:
+            self.q_table[state] = {"buy": 0.0, "sell": 0.0, "hold": 0.0}
+        return self.q_table[state]    
+        
+    def pick(self, snapshot, timestep, genre_popularity):
+        """
+        reward is calculated from wealth change since prev weaalth
+        and learns from prev steps actions
+        
+        """
+        
+        current_wealth = self.wealth(snapshot)
+        reward = current_wealth - self.prev_wealth
+        self.prev_wealth = current_wealth
+        
+        for aid, (prev_state, prev_action) in self.prev_actions.items():
+            if aid in snapshot:
+                new_state = self.get_state(snapshot[aid])
+                prev_q = self.get_q(prev_state)
+                new_q = self.get_q(new_state)
+                best_option = max(new_q.values())
+                
+                # Q learning formula
+                prev_q[prev_action] += self.learning_rate * (reward + self.discount * best_option - prev_q[prev_action])
+        self.explore_rate = max(self.min_explore_rate, self.explore_rate * 0.995)
+        orders = []
+        self.prev_actions = {}
+        
+        for aid, info in snapshot.items():
+            state = self.get_state(info)
+            q = self.get_q(state)
+            # either explores new step or pick best known action
+            if random.random() < self.explore_rate:
+                action = random.choice(["buy", "sell", "hold"])
+            else:
+                action = max(q, key=q.get)
+            
+            if action == "buy" and self.can_buy(info["price"]):
+                orders.append((aid, "buy"))
+            elif action == "sell" and self.holds(aid) > 0:
+                orders.append((aid, "sell"))
+            else:
+                action = "hold"
+            self.prev_actions[aid] = (state, action)
+        return orders
                 
               
         
+    
+                
+class QLearningPreHighTrader(Trader):
+    """
+    Qlearning high trader is a more sophisticated version of the base trader
+    
+    Has 18 states
+    
+    
+    starts exploring randomly and starts learning
+    
+    """
+    
+    def __init__(self, trader_id, initial_fund=10000, pretrain_steps=500):
+        super().__init__(trader_id, initial_fund)
+        self.q_table = {}
+        self.temporal_difference = 0
+        self.learning_rate = 0.1
+        self.explore_rate = 0.3
+        self.discount = 0.9
+        self.min_explore_rate = 0.07
+        self.prev_wealth = initial_fund
+        self.pretrain_steps = pretrain_steps
+        self.prev_actions = {}
+        
+    
+    def get_state(self, info):
+        """
+        Turns the trading mechnics into a simple state: (price_up, growing)
+        added 3 options
+        {price, career, virality} 
+        """
+        
+        history = info["history"]
+        
+        if len(history) >= 10 and history[-10] > 0:
+            change = (info["price"] - history[-10]) / history[-10]
+            if change > 0.02:
+                price = "rise"
+            elif change < -0.02:
+                price = "decrease"
+            else:
+                price = "flat"
+        else:
+            price = "flat"
+        if info["stage"] in ["emerging", "rising"]:
+            career = "rising"
+        elif info["stage"] == "peak":
+            career = "peak"
+        else:
+            career = "falling"
+            
+        if info["viral"] > 0.1:
+            viral = True
+        else:
+            viral = False
+        return (price, career, viral)
+            
+        
+    def get_q(self, state):
+        """
+        Gets q value for the state
+        if not in q table makes one 
+        """
+        
+        if state not in self.q_table:
+            self.q_table[state] = {"buy": 0.0, "sell": 0.0, "hold": 0.0}
+        return self.q_table[state]    
+        
+    def pretrain(self, times=3):
+        for run in range(times):
+            random.seed(run * 999)
+            mock_artists = []
+            for i in range(100):
+                genre = random.choice(GENRES)
+                talent = max(0.05, min(0.95, random.gauss(0.5, 0.15)))
+                loyalty = max(0.05, min(0.95, random.gauss(0.5, 0.15)))
+                stage = random.choices(STAGES, weights=[0.3, 0.25, 0.15, 0.2, 0.1])[0]
+                mock_artists.append(Artist(f"a{i:03d}", genre, talent, loyalty, stage))
 
+            mock_market = Market(mock_artists)
+            for a in mock_artists:
+                a.value = a.calculate_value(mock_market.genre_popularity(a.genre, 0))
+                a.price = a.value
+
+            for t in range(self.pretrain_steps):
+                mock_market.random_events(t)
+                popularity = {g: mock_market.genre_popularity(g, t) for g in GENRES}
+                for a in mock_artists:
+                    a.steps(popularity[a.genre])
+
+                snapshot = mock_market.get_snapshot()
+                current_wealth = self.wealth(snapshot)
+                reward = current_wealth - self.prev_wealth
+                self.prev_wealth = current_wealth
+
+                for aid, (prev_state, prev_action) in self.prev_actions.items():
+                    if aid in snapshot:
+                        new_state = self.get_state(snapshot[aid])
+                        prev_q = self.get_q(prev_state)
+                        new_q = self.get_q(new_state)
+                        best_option = max(new_q.values())
+                        prev_q[prev_action] += self.learning_rate * (reward + self.discount * best_option - prev_q[prev_action])
+
+                buys = {}
+                sells = {}
+                self.prev_actions = {}
+
+                for aid, info in snapshot.items():
+                    state = self.get_state(info)
+                    q = self.get_q(state)
+                    if random.random() < self.explore_rate:
+                        action = random.choice(["buy", "sell", "hold"])
+                    else:
+                        action = max(q, key=q.get)
+
+                    artist = mock_market.artists[aid]
+                    if action == "buy" and self.cash >= artist.price * 1.01:
+                        self.cash -= artist.price * 1.01
+                        self.portfolio[aid] = self.portfolio.get(aid, 0) + 1
+                        buys[aid] = buys.get(aid, 0) + 1
+                    elif action == "sell" and self.portfolio.get(aid, 0) > 0:
+                        self.cash += artist.price * 0.99
+                        self.portfolio[aid] -= 1
+                        if self.portfolio[aid] == 0:
+                            del self.portfolio[aid]
+                        sells[aid] = sells.get(aid, 0) + 1
+                    else:
+                        action = "hold"
+                    self.prev_actions[aid] = (state, action)
+
+                mock_market.update_prices(buys, sells)
+
+            self.cash = self.initial_fund
+            self.portfolio = {}
+            self.prev_wealth = self.initial_fund
+            self.prev_actions = {}
+
+        self.explore_rate = 0.1
         
         
+    def pick(self, snapshot, timestep, genre_popularity):
+        """
+        reward is calculated from wealth change since prev weaalth
+        and learns from prev steps actions
+        
+        """
+        
+        current_wealth = self.wealth(snapshot)
+        reward = current_wealth - self.prev_wealth
+        self.prev_wealth = current_wealth
+        
+        for aid, (prev_state, prev_action) in self.prev_actions.items():
+            if aid in snapshot:
+                new_state = self.get_state(snapshot[aid])
+                prev_q = self.get_q(prev_state)
+                new_q = self.get_q(new_state)
+                best_option = max(new_q.values())
+                
+                # Q learning formula
+                prev_q[prev_action] += self.learning_rate * (reward + self.discount * best_option - prev_q[prev_action])
+        self.explore_rate = max(self.min_explore_rate, self.explore_rate * 0.995)
+        orders = []
+        self.prev_actions = {}
+        
+        for aid, info in snapshot.items():
+            state = self.get_state(info)
+            q = self.get_q(state)
+            # either explores new step or pick best known action
+            if random.random() < self.explore_rate:
+                action = random.choice(["buy", "sell", "hold"])
+            else:
+                action = max(q, key=q.get)
+            
+            if action == "buy" and self.can_buy(info["price"]):
+                orders.append((aid, "buy"))
+            elif action == "sell" and self.holds(aid) > 0:
+                orders.append((aid, "sell"))
+            else:
+                action = "hold"
+            self.prev_actions[aid] = (state, action)
+        return orders
+
+
+class QLearningPreBaseTrader(Trader):
+    """
+    Pretrained QLearning
+    Runs pretrain() on mock markets before the real simulation so the
+    Q-table starts with prior experience instead of all zeros.
+    """
+
+    def __init__(self, trader_id, initial_fund=10000, pretrain_steps=500):
+        super().__init__(trader_id, initial_fund)
+        self.q_table = {}
+        self.learning_rate = 0.1
+        self.explore_rate = 0.3
+        self.discount = 0.9
+        self.prev_wealth = initial_fund
+        self.pretrain_steps = pretrain_steps
+        self.prev_actions = {}
+
+    def get_state(self, info):
+        history = info["history"]
+        if len(history) >= 10 and history[-10] > 0:
+            change = (info["price"] - history[-10]) / history[-10]
+            price_up = change > 0.02
+        else:
+            price_up = False
+        growing = info["stage"] in ["emerging", "rising"]
+        return (price_up, growing)
+
+    def get_q(self, state):
+        if state not in self.q_table:
+            self.q_table[state] = {"buy": 0.0, "sell": 0.0, "hold": 0.0}
+        return self.q_table[state]
+
+    def pretrain(self, times=3):
+        for run in range(times):
+            random.seed(run * 999)
+            mock_artists = []
+            for i in range(100):
+                genre = random.choice(GENRES)
+                talent = max(0.05, min(0.95, random.gauss(0.5, 0.15)))
+                loyalty = max(0.05, min(0.95, random.gauss(0.5, 0.15)))
+                stage = random.choices(STAGES, weights=[0.3, 0.25, 0.15, 0.2, 0.1])[0]
+                mock_artists.append(Artist(f"a{i:03d}", genre, talent, loyalty, stage))
+
+            mock_market = Market(mock_artists)
+            for a in mock_artists:
+                a.value = a.calculate_value(mock_market.genre_popularity(a.genre, 0))
+                a.price = a.value
+
+            for t in range(self.pretrain_steps):
+                mock_market.random_events(t)
+                popularity = {g: mock_market.genre_popularity(g, t) for g in GENRES}
+                for a in mock_artists:
+                    a.steps(popularity[a.genre])
+
+                snapshot = mock_market.get_snapshot()
+                current_wealth = self.wealth(snapshot)
+                reward = current_wealth - self.prev_wealth
+                self.prev_wealth = current_wealth
+
+                for aid, (prev_state, prev_action) in self.prev_actions.items():
+                    if aid in snapshot:
+                        new_state = self.get_state(snapshot[aid])
+                        prev_q = self.get_q(prev_state)
+                        new_q = self.get_q(new_state)
+                        best_option = max(new_q.values())
+                        prev_q[prev_action] += self.learning_rate * (reward + self.discount * best_option - prev_q[prev_action])
+
+                buys = {}
+                sells = {}
+                self.prev_actions = {}
+
+                for aid, info in snapshot.items():
+                    state = self.get_state(info)
+                    q = self.get_q(state)
+                    if random.random() < self.explore_rate:
+                        action = random.choice(["buy", "sell", "hold"])
+                    else:
+                        action = max(q, key=q.get)
+
+                    artist = mock_market.artists[aid]
+                    if action == "buy" and self.cash >= artist.price * 1.01:
+                        self.cash -= artist.price * 1.01
+                        self.portfolio[aid] = self.portfolio.get(aid, 0) + 1
+                        buys[aid] = buys.get(aid, 0) + 1
+                    elif action == "sell" and self.portfolio.get(aid, 0) > 0:
+                        self.cash += artist.price * 0.99
+                        self.portfolio[aid] -= 1
+                        if self.portfolio[aid] == 0:
+                            del self.portfolio[aid]
+                        sells[aid] = sells.get(aid, 0) + 1
+                    else:
+                        action = "hold"
+                    self.prev_actions[aid] = (state, action)
+
+                mock_market.update_prices(buys, sells)
+
+            self.cash = self.initial_fund
+            self.portfolio = {}
+            self.prev_wealth = self.initial_fund
+            self.prev_actions = {}
+
+        self.explore_rate = 0.1
+
+    def pick(self, snapshot, timestep, genre_popularity):
+        current_wealth = self.wealth(snapshot)
+        reward = current_wealth - self.prev_wealth
+        self.prev_wealth = current_wealth
+
+        for aid, (prev_state, prev_action) in self.prev_actions.items():
+            if aid in snapshot:
+                new_state = self.get_state(snapshot[aid])
+                prev_q = self.get_q(prev_state)
+                new_q = self.get_q(new_state)
+                best_option = max(new_q.values())
+                prev_q[prev_action] += self.learning_rate * (reward + self.discount * best_option - prev_q[prev_action])
+        orders = []
+        self.prev_actions = {}
+
+        for aid, info in snapshot.items():
+            state = self.get_state(info)
+            q = self.get_q(state)
+            if random.random() < self.explore_rate:
+                action = random.choice(["buy", "sell", "hold"])
+            else:
+                action = max(q, key=q.get)
+
+            if action == "buy" and self.can_buy(info["price"]):
+                orders.append((aid, "buy"))
+            elif action == "sell" and self.holds(aid) > 0:
+                orders.append((aid, "sell"))
+            else:
+                action = "hold"
+            self.prev_actions[aid] = (state, action)
+        return orders
+
                     
