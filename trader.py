@@ -261,7 +261,7 @@ class CareerTrader(Trader):
     
 class AdaptiveTrader(Trader):
     """
-    Switches between financial and music-domain trading to maximise profit
+    Switches between mean reversion and momentum trading to maximise profit
     """
     def __init__(self, trader_id, initial_fund=10000):
         super().__init__(trader_id, initial_fund)

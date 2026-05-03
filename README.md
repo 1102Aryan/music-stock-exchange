@@ -22,9 +22,15 @@ The project is inspired by the Bristol Stock Exchange (Cliff, 2018).
 ### Adaptive
 - **AdaptiveTrader** - Switches between momentum and MeanRev based on which is performing better
 
+### Reinforcement Learning
+- **Q-LearningTrader** - Learns from decisions made and performs action based on them
+
 
 
 ## Screenshot
+<p align="center">
+  <img src="images/music_stock_exchange_main.png" alt="Music Stock Exchange Simulation" width="500" />
+</p>
 
 ## Project Structure
 ```
